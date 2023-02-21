@@ -1,6 +1,6 @@
 ![Logo](./images/grid_0.png)
 
-# TALK GPT 0.3v
+# TALK GPT 0.4v
 
 This is a simple Bash script that uses OpenAI's GPT-3 API to chat with an AI. The script allows you to create a new chat, or to continue a previous one. The responses are in text and can now also be generated with a robotic voice.
 The configuration and chat files are now by default saved in $HOME/.config/talk_gpt, allowing for separation of the script and files and making it possible to include them in the same system.
@@ -32,3 +32,34 @@ You should also generate an API KEY at https://platform.openai.com/account/api-k
   *  Opción 6 Comprueba que esten instaladas ciertas librerias y sino las instala automaticamente.
   *  Opción 0 Sale del script.
 
+
+## Commands prompt:
+---
+> ayuda
+---
+
+~~~
+A continuación se listan una serie de comandos que pueden ser incluidos en el prompt y que 
+se reconoceran, casi todos deben estar solos, img() si si esta acompañada se separa pero el resto no
+~~~
+**ver_img**
+        devuelve las imagenes disponibles en el directorio definido para
+        trabajar con imagenes.
+**img(<valor1>,<valor2>)**
+        <valor1> tiene que ser el número de imagen que se quiere trabajar que fue
+        devuelto por ver_img, tomara esa imagen y la reducira y luego la convertira en base64
+        <valor2> es un string que ira acompañado de la imagen para pasarle como mensaje.
+**borrar_cache**
+        borra el archivo chat* con el que se esta trabajando actualmente por si la conversación se volvio
+        muy extensa, a veces es conveniente porque puede mezclar temas
+**volver**
+        Vuelve al menú inicial cortando el flujo de la conversación, por lo tanto no se guarda.
+**chau**
+        Sale directamente del programa, cortando el flujo de la conversación y devuelve el nombre del
+        archivo chat* donde se estuvo guardando la conversación
+**ver_valores**
+        Muestras los valores actuales con los que esta trabajando
+**m_voz**
+        Permite modificar el valor de la variable voz, para que lea el contenido o no, es false o true
+**ayuda**
+        Es donde vas a estar

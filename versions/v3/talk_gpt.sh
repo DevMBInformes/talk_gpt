@@ -1,38 +1,6 @@
 #!/bin/bash
 
 
-function convert_img {
-  imagenes=$(find "$ruta_imagenes" \( -name "*.jpg" -o -name "*.png" -o -name "*.gif" \))
-  num_imagenes=$(echo "$imagenes" | wc -l)
-
-  # Ingresar comando
-  comando=$1
-  
-  # Extraer el numero de la imagen
-  numero=$(echo $comando | cut -d ',' -f 1 | cut -d '(' -f 2)
-
-  # Extraer el texto
-  texto=$(echo $comando | cut -d ',' -f 2 | cut -d '"' -f 2)
-
-
-  # Comprobar si el número de imagen está dentro del rango de la lista de imágenes
-  if [[ "$numero" -gt 0 && "$numero" -le "$num_imagenes" ]]; then
-    # Buscar la ruta de la imagen correspondiente utilizando sed
-    ruta=$(echo "$imagenes" | sed -n "${numero}p")
-  else
-    echo "El número de imagen está fuera del rango."
-  fi
-  number=$(shuf -i1-9999 -n1)
-  new_file_tmp="tmp_img_$number"
-  convert $ruta -quality 20 -resize 30x30! $ruta_imagenes$new_file_tmp
-  # Convertir la imagen a Base64
-  base64=$(base64 $ruta_imagenes$new_file_tmp)
-  rm $ruta_imagenes$new_file_tmp 
-  echo "te envio esta imagen en base64,$texto: $base64"
-  return 0
-  
-}
-
 ##########
 #talk_gpt
 #
@@ -45,39 +13,19 @@ function talk_gpt {
   content_type="Content-Type: application/json"
   chat_file=$1
   clear
+
   # Loop infinito para mantener la conversación
   while true; do
-    imagen="false"
-    continuar="true"
     total_line "-"
     p_text "$(whoami)" "0" "red"
     read -p "> " input_text
-    if [[ $input_text == "ayuda" ]]; then
-      print_ayuda
-      continuar="false"
-    fi
-    if [[ $input_text == "ver_valores" ]]; then
-      ver_valores
-      continuar="false"
-    fi
-    if [[ $input_text == "m_voz" ]]; then
-      modificar_variable "voz" "$voz"
-      continuar="false"
-    fi
+    
     if [[ "$input_text" == "borrar_cache" ]]; then
       > $chat_file #se borra el contenido del archivo cache
       p_text "Se ha borrado todo el contenido de la conversación." "1" "blue"
       continue
     fi
-    if [[ $input_text == *"img("* ]]; then
-      valor=$(echo $input_text | grep -o "img.*)")
-      input_text="$(convert_img "$valor")"
-      imagen="true"
-    fi
-    if [[ "$input_text" == "ver_img" ]];then
-      find $ruta_imagenes -name "*.jpg" -o -name "*.png" -o -name "*.gif" | nl
-      continue
-    fi
+
     if [[ "$input_text" == "chau" ]]; then
       p_text "¡Adiós! ¡Hasta la próxima!, este chat quedo registrado en el archivo $chat_file." "1" "green"
       break 
@@ -86,38 +34,22 @@ function talk_gpt {
       main
       break
     fi
-    if [[  $imagen == "true" ]]; then
-      input_text_final=$input_text
-      echo "se envio imagen..." >> $chat_file
-    else
-      echo "yo:
-      $input_text
-      " >> $chat_file
-      read -d '' input_text_final < "$chat_file"
-      if expr length "$input_text_final" \> 4000 >/dev/null; then
-          input_text_final=$(echo "${input_text_final: -4000}")
-      fi
-    fi
-    if [[ $continuar == "true" ]]; then
-        #Escapar caracteres especiales en la entrada del usuario
-        input_text=$(echo "$input_text_final" | jq -R '.' | jq -s -c --arg modelo "$modelo" --argjson temperatura "$temperatura" --argjson max_token "$max_token" '{"model": $modelo , "prompt" : "\(.)", "temperature": $temperatura, "max_tokens" : $max_token}')
-        # response, enviamos los datos:
-        response=$(curl -s -X POST -H "$content_type" -H "$authorization" -d "$input_text" $url)
-        output=$(echo $response | jq -r '.choices[0].text')
-        total_line "-"
-        p_text "OpenAI: $output" "1" "blue"
-        echo "OpenAI: $output" >> $chat_file
-      
-        if [[ $output == *"null" ]]; then
-          echo $input_text
-          echo $response
-        else 
-          echo $input_text >> "$ruta_principal/tgpt.log"
-          echo $response >> "$ruta_principal/tgpt.log"
-        fi
-        if [[ "$voz" == "true" ]]; then
-          espeak-ng -v es-419 "$output"
-        fi
+
+    echo "yo:
+    $input_text
+    " >> $chat_file
+
+    #Escapar caracteres especiales en la entrada del usuario
+    input_text=$(echo "$input_text" | jq -R '.' | jq -s -c --arg modelo "$modelo" --argjson temperatura "$temperatura" --argjson max_token "$max_token" '{"model": $modelo , "prompt" : "\(.)", "temperature": $temperatura, "max_tokens" : $max_token}')
+
+    # response, enviamos los datos:
+    response=$(curl -s -X POST -H "$content_type" -H "$authorization" -d "$input_text" $url)
+    output=$(echo $response | jq -r '.choices[0].text')
+    total_line "-"
+    p_text "OpenAI: $output" "1" "blue"
+    echo "OpenAI: $output" >> $chat_file
+    if [[ "$voz" == "true" ]]; then
+      espeak-ng -v es-419 "$output"
     fi
   done
 }
@@ -301,8 +233,8 @@ function open_file {
 
 
 function init {
-        ruta_principal="$HOME/.config/talk_gpt"
-        config_file="$ruta_principal/config.cfg"
+        ruta_principal=$HOME/.config/talk_gpt
+        config_file=$ruta_principal/config.cfg
     # Si el archivo de configuración existe, cargar las variables desde él
     if [ -f "$config_file" ]; then
         source "$config_file"
@@ -313,8 +245,6 @@ function init {
         voz="false"
         max_token="600"
         url="https://api.openai.com/v1/completions"
-        ruta_imagenes="$ruta_principal/imagenes/"
-        ruta_textos="$ruta_principal/textos/"
         # si el archivo de configuración no existe se crea.
         mkdir -p $ruta_principal
         echo "ruta_principal=$ruta_principal" >> $config_file
@@ -325,17 +255,8 @@ function init {
         echo "max_token=$max_token" >> $config_file
         echo "url=$url" >> $config_file
         echo "YOUR_API_KEY=YOUR_API_KEY" >> $config_file
-        echo "ruta_imagenes=$ruta_imagenes" >> $config_file
-        echo "ruta_textos=$ruta_textos" >> $confi_file
         source "$config_file"
     fi
-    if [[ ! -d $ruta_imagenes ]]; then
-      mkdir $ruta_imagenes
-    fi
-    if [[ ! -d $ruta_textos ]]; then
-      mkdir $ruta_textos
-    fi
-
   
   main
 }
@@ -379,9 +300,7 @@ function show_menu {
     p_text " 5) Máximo de tokens ($max_token)" "1" "blue"
     p_text " 6) URL de la API ($url)" "1" "blue"
     p_text " 7) Setear valor Api Key (secret)" "1" "red"
-    p_text " 8) Setear galeria imagenes ($ruta_imagenes)" "1" "green"
-    p_text " 9) Setear galeria texto ($ruta_textos)" "1" "green"
-    p_text " 0) Salir" "1" "red"
+    p_text " 8) Salir" "1" "red"
 }
 
 function config {
@@ -417,12 +336,6 @@ while true; do
             modificar_variable "YOUR_API_KEY" "$YOUR_API_KEY"
             ;;
         8)
-            modificar_variable "ruta_imagenes" "$ruta_imagenes"
-            ;;
-        9) 
-            modificar_variable "ruta_textos" "$ruta_textos"
-            ;;
-        0)
             main
             break
             ;;
@@ -545,46 +458,5 @@ function requirements {
   main
   }
 
-
-function print_ayuda {
-      total_line "*"
-      p_text "A continuación se listan una serie de comandos que pueden ser incluidos en el prompt y que " "0" "blue"
-      p_text "se reconoceran, casi todos deben estar solos, img() si si esta acompañada se separa pero el resto no" "0" "blue"
-      total_line "*"
-      p_text "ver_img" "1" "blue"
-      p_text "        devuelve las imagenes disponibles en el directorio definido para" "0" "green"
-      p_text "        trabajar con imagenes." "0" "green"
-      p_text "img(<valor1>,<valor2>)" "1" "blue"
-      p_text "        <valor1> tiene que ser el número de imagen que se quiere trabajar que fue" "0" "green"
-      p_text "        devuelto por ver_img, tomara esa imagen y la reducira y luego la convertira en base64" "0" "green"
-      p_text "        <valor2> es un string que ira acompañado de la imagen para pasarle como mensaje." "0" "green"
-      p_text "borrar_cache" "1" "blue"
-      p_text "        borra el archivo chat* con el que se esta trabajando actualmente por si la conversación se volvio" "0" "green"
-      p_text "        muy extensa, a veces es conveniente porque puede mezclar temas" "0" "green"
-      p_text "volver" "1" "blue"
-      p_text "        Vuelve al menú inicial cortando el flujo de la conversación, por lo tanto no se guarda." "0" "green"
-      p_text "chau" "1" "blue"
-      p_text "        Sale directamente del programa, cortando el flujo de la conversación y devuelve el nombre del" "0" "green"
-      p_text "        archivo chat* donde se estuvo guardando la conversación" "0" "green"
-      p_text "ver_valores" "1" "blue"
-      p_text "        Muestras los valores actuales con los que esta trabajando" "0" "green"
-      p_text "m_voz" "1" "blue"
-      p_text "        Permite modificar el valor de la variable voz, para que lea el contenido o no, es false o true" "0" "green"
-      p_text "ayuda" "1" "blue"
-      p_text "        Es donde estas, bobo" "0" "red"
-
-}
-
-function ver_valores {
-    p_text "Valores seteados:" "1" "green"
-    p_text " 1) Ruta principal = ($ruta_principal)" "1" "blue"
-    p_text " 2) Temperatura = ($temperatura)" "1" "blue"
-    p_text " 3) Modelo = ($modelo)" "1" "blue"
-    p_text " 4) Voz = ($voz)" "1" "blue"
-    p_text " 5) Máximo de tokens = ($max_token)" "1" "blue"
-    p_text " 6) URL de la API = ($url)" "1" "blue"
-    p_text " 7) Galeria imagenes = ($ruta_imagenes)" "1" "blue"
-    p_text " 8) Galeria texto = ($ruta_textos)" "1" "blue"
-}
 
 init

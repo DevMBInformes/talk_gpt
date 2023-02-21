@@ -77,3 +77,16 @@ se reconoceran, casi todos deben estar solos, img() si si esta acompañada se se
 
 * **ayuda**
         Es donde vas a estar
+
+## Screenshots
+
+
+![imagen1](./images/imagen1.png)
+![imagen2](./images/imagen2.png)
+![imagen3](./images/imagen3.png)
+![imagen4](./images/imagen4.png)
+![imagen5](./images/imagen5.png)
+![imagen6](./images/imagen6.png)
+![imagen7](./images/imagen7.png)
+![imagen8](./images/imagen8.png)
+![imagen9](./images/imagen9.png)

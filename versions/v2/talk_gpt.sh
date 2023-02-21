@@ -9,6 +9,9 @@
 ##########
 function talk_gpt {
   # Definir la URL de la api de OpenAI
+  #url="https://api.openai.com/v1/completions"
+  # la api key generadad
+  YOUR_API_KEY="YOUR_API_KEY"
   authorization="Authorization: Bearer $YOUR_API_KEY"
   content_type="Content-Type: application/json"
   chat_file=$1
@@ -45,6 +48,7 @@ function talk_gpt {
     # response, enviamos los datos:
     response=$(curl -s -X POST -H "$content_type" -H "$authorization" -d "$input_text" $url)
     output=$(echo $response | jq -r '.choices[0].text')
+
     total_line "-"
     p_text "OpenAI: $output" "1" "blue"
     echo "OpenAI: $output" >> $chat_file
@@ -125,7 +129,6 @@ function main {
     p_text "3. Configurar opciones" "1" "green"
     p_text "4. Configuraciones por defecto" "1" "blue"
     p_text "5. Borrar todos los chats" "1" "blue"
-    p_text "6. Comprobar el sistema" "1" "blue"
     p_text "0. Salir" "1" "red"
 
     read -p "Seleccione una opción: " option
@@ -151,10 +154,6 @@ function main {
       ;;
       5)
       clear_chats
-      break
-      ;;
-      6)
-      requirements
       break
       ;;
       0)
@@ -201,12 +200,13 @@ function create_file {
 
 function open_file {
   clear
-  if [ ! -s "$ruta_principal/ht.t" ] || [ -f "$ruta_princial/ht.t" ]; then
+  if [ ! -s "$ruta_principal/ht.t" ] || [  -f "$ruta_princial/ht.t" ]; then
     touch "$ruta_principal/ht.t"
     p_text "No existen chats para cargar, presione enter para volver..." "1" "red"
   read -p ""
   main
   else
+
     while true; do
       contador=1
       while IFS="|" read -r description file
@@ -215,10 +215,8 @@ function open_file {
         contador=$((contador+1))
       done < "$ruta_principal/ht.t"
       read -p "Ingrese el número de chat a recuperar: " number_chat
-      if [ $number_chat -gt $((contador-1)) ] ||  [[ ! "$number_chat" =~ ^[0-9]+$ ]]; then
-        clear
-        p_text "El número es mayor que la cantidad de chat generados o ingreso un caracter incorrecto" "1" "red"
-        continue
+      if [ $number_chat -gt $contador ]; then
+        p_text "El número es mayor que la cantidad de chat generados." "1" "red"
       else
         read -r linea < "$ruta_principal/ht.t"
         chat_file=$(echo $linea | cut -d "|" -f 2)
@@ -233,8 +231,8 @@ function open_file {
 
 
 function init {
-        ruta_principal=$HOME/.config/talk_gpt
-        config_file=$ruta_principal/config.cfg
+        ruta_principal="$HOME/.config/talk_gpt"
+        config_file="$ruta_principal/config.cfg"
     # Si el archivo de configuración existe, cargar las variables desde él
     if [ -f "$config_file" ]; then
         source "$config_file"
@@ -254,7 +252,6 @@ function init {
         echo "voz=$voz" >> $config_file
         echo "max_token=$max_token" >> $config_file
         echo "url=$url" >> $config_file
-        echo "YOUR_API_KEY=YOUR_API_KEY" >> $config_file
         source "$config_file"
     fi
   
@@ -299,8 +296,7 @@ function show_menu {
     p_text " 4) Voz ($voz)" "1" "blue"
     p_text " 5) Máximo de tokens ($max_token)" "1" "blue"
     p_text " 6) URL de la API ($url)" "1" "blue"
-    p_text " 7) Setear valor Api Key (secret)" "1" "red"
-    p_text " 8) Salir" "1" "red"
+    p_text " 7) Salir" "1" "red"
 }
 
 function config {
@@ -333,9 +329,6 @@ while true; do
             sed -i "s/^url=.*/url=\"$url\"/" "$config_file"
             ;;
         7)
-            modificar_variable "YOUR_API_KEY" "$YOUR_API_KEY"
-            ;;
-        8)
             main
             break
             ;;
@@ -358,105 +351,6 @@ function clear_config {
   init
 }
 
-function requirements {
-  clear
-  # Comprobar la distribución de Linux y el gestor de paquetes
-
-  p_text "----------------------" "1" "green"
-  p_text "   talk_gpt 0.3v      " "1" "blue"
-  p_text "   author: devMB      " "1" "red"
-  p_text "----------------------" "1" "green"
-  echo 
-  echo
-  p_text "Comienzan las comprobaciones del sistema..." "1" "red"
-
-  if [[ -e /etc/os-release ]]; then
-      . /etc/os-release
-      OS=$ID
-      if [[ $ID =~ "debian" ]]; then
-          PACKAGE_MANAGER="apt-get"
-          INSTALL="sudo $PACKAGE_MANAGER install "
-          READ="command -v"
-      elif [[ $ID =~ "fedora" ]]; then
-          PACKAGE_MANAGER="dnf"
-          INSTALL="sudo $PACKAGE_MANAGER install -y "
-          READ="command -v"
-      elif [[ $ID =~ "centos" ]]; then
-          PACKAGE_MANAGER="yum"
-          INSTALL="sudo $PACKAGE_MANAGER -y "
-          READ="rpm -q"
-      elif [[ $ID =~ "ubuntu" ]]; then
-          PACKAGE_MANAGER="apt"
-          INSTALL="sudo $PACKAGE_MANAGER install -y "
-          READ="command -v"
-      elif [[ $ID =~ "arch" ]]; then
-           PACKAGE_MANAGER="pacman"
-           INSTALL="sudo $PACKAGE_MANAGER -S --noconfirm "
-           READ="pacman -Q"
-      else
-          PACKAGE_MANAGER="unknown"
-      fi
-  elif [[ `uname` == 'Darwin' ]]; then
-        OS='Mac OS X'
-        PACKAGE_MANAGER='brew'
-  else
-        OS='unknown'
-        PACKAGE_MANAGER='unknown'
-  fi
-
-    p_text "Distribución de Linux detectada: $OS" "0" "blue"
-    p_text "Gestor de paquetes detectado: $PACKAGE_MANAGER" "0" "blue"
-    sleep 1
-  # Continúa con el resto de tu script aquí
-   # Comprobar si jq está instalado
-  if ! $READ  jq &> /dev/null; then
-      p_text "[-] JQ no está instalado. Instalando..." "1" "blue"
-      $INSTALL jq
-    else
-      p_text "[X] JQ INSTALADO" "1" "green"
-      sleep 1
-  fi
-
-  # Comprobar si bc está instalado
-  if ! $READ bc &> /dev/null; then
-      echo "[-] BC no está instalado. Instalando..."
-      $INSTALL bc
-    else
-      p_text "[X] BC INSTALADO" "1" "green"
-      sleep 1
-  fi
-
-  # Comprobar si curl está instalado
-  if ! $READ curl &> /dev/null; then
-      echo "[-] CURL no está instalado. Instalando..."
-      $INSTALL curl
-    else
-      p_text "[X] CURL INSTALADO" "1" "green"
-      sleep 1
-  fi
-
-  # Comprobar si espeak-bg está instalado
-  if ! $READ espeak-ng &> /dev/null; then
-      echo "[-] ESPEAK-NG no está instalado. Instalando..."
-      $INSTALL espeak-ng
-    else
-      p_text "[X] ESPEAK-NG INSTALADO" "1" "green"
-      sleep 1
-  fi
-
-  # Continúa con el resto de tu script aquí
-
-  p_text "Las comprobaciones del sistema han terminado..." "1" "blue"
-  p_text "volveremos al main en" "1" "blue"
-  p_text "3" "1" "red"
-  sleep 1
-  p_text "2" "1" "red"
-  sleep 1
-  p_text "1" "1" "red" 
-  sleep 1
-
-  main
-  }
-
-
 init
+
+

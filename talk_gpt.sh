@@ -200,7 +200,7 @@ function create_file {
 
 function open_file {
   clear
-  if [ ! -s "$ruta_principal/ht.t" ] || [ ! -f "$ruta_princial/ht.t" ]; then
+  if [ ! -s "$ruta_principal/ht.t" ] || [  -f "$ruta_princial/ht.t" ]; then
     touch "$ruta_principal/ht.t"
     p_text "No existen chats para cargar, presione enter para volver..." "1" "red"
   read -p ""

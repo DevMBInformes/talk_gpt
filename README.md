@@ -1,3 +1,5 @@
+![Logo](./images/grid_0.png)
+
 # TALK GPT 0.1v
 
 This is a simple Bash script that uses OpenAI's GPT-3 API to chat with an AI. The script allows you to create a new chat, or to continue a previous one.

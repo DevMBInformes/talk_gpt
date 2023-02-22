@@ -47,70 +47,45 @@ function talk_gpt {
   clear
   # Loop infinito para mantener la conversación
   while true; do
-    imagen="false" #si imagen es false, quiere decir que no vamos a enviar imagenes por lo que sigue, sino se cambiar u no sigue con texto
-    continuar="true" #esto es para saltar en el caso de que haya que mostrar algo por pantalla
-    type="text" # esto va a definir que tiene que hacer por ahora va text o imagen, pero quiero agregar code
-    total_line "-" 
+    imagen="false"
+    continuar="true"
+    total_line "-"
     p_text "$(whoami)" "0" "red"
     read -p "> " input_text
-    # entra en ayuda
     if [[ $input_text == "ayuda" ]]; then
       print_ayuda
       continuar="false"
     fi
-    # muestra valores de las variables
     if [[ $input_text == "ver_valores" ]]; then
       ver_valores
       continuar="false"
     fi
-    # para setear voz
     if [[ $input_text == "m_voz" ]]; then
       modificar_variable "voz" "$voz"
       continuar="false"
     fi
-    # para modificar la cantidad de imagenes que genera
-    if [[ $input_text == "m_n" ]]; then
-      modificar_variable "n" "$n"
-      continuar="false"
-    fi
-    # para modificar el tamaños de las imagenes solicitadas
-    if [[ $input_texyt == "m_size" ]]; then
-      modificar_variable "size" "$size"
-    fi
-    # para borrar la cache de la converasción
     if [[ "$input_text" == "borrar_cache" ]]; then
       > $chat_file #se borra el contenido del archivo cache
       p_text "Se ha borrado todo el contenido de la conversación." "1" "blue"
       continue
     fi
-    # para subir imagenes a la AI de text
-    if [[ $input_text == "imagen("* ]]; then
-      input_text=$(echo $input_text | cut -d'(' -f2 | cut -d')' -f1)
-      type="imagen"
-    fi
-    # para solicitar imagenes
     if [[ $input_text == *"img("* ]]; then
       valor=$(echo $input_text | grep -o "img.*)")
       input_text="$(convert_img "$valor")"
       imagen="true"
     fi
-    # mustra las imagenes que tenemos en el directorio
     if [[ "$input_text" == "ver_img" ]];then
       find $ruta_imagenes -name "*.jpg" -o -name "*.png" -o -name "*.gif" | nl
       continue
     fi
-    # sale del programa
     if [[ "$input_text" == "chau" ]]; then
       p_text "¡Adiós! ¡Hasta la próxima!, este chat quedo registrado en el archivo $chat_file." "1" "green"
       break 
     fi
-    # vuelve al menu principal
     if [[ "$input_text" == "volver" ]]; then
       main
       break
     fi
-    # comprueba si es o no una imagen con la que queremos trabajar
-    # en el caso de que si no va guardar el input
     if [[  $imagen == "true" ]]; then
       input_text_final=$input_text
       echo "se envio imagen..." >> $chat_file
@@ -123,46 +98,26 @@ function talk_gpt {
           input_text_final=$(echo "${input_text_final: -4000}")
       fi
     fi
-    # comprueba que tipo solicitud vamos a hacer...
-    if [[ $type == "text" ]]; then
-        if [[ $continuar == "true" ]]; then
-            #Escapar caracteres especiales en la entrada del usuario
-            input_text=$(echo "$input_text_final" | jq -R '.' | jq -s -c --arg modelo "$modelo" --argjson temperatura "$temperatura" --argjson max_token "$max_token" '{"model": $modelo , "prompt" : "\(.)", "temperature": $temperatura, "max_tokens" : $max_token}')
-            # response, enviamos los datos:
-            response=$(curl -s -X POST -H "$content_type" -H "$authorization" -d "$input_text" $url)
-            output=$(echo $response | jq -r '.choices[0].text')
-            total_line "-"
-            p_text "OpenAI: $output" "1" "blue"
-            echo "OpenAI: $output" >> $chat_file
-          
-            if [[ $output == *"null" ]]; then
-              echo $input_text
-              echo $response
-            else 
-              echo $input_text >> "$ruta_principal/tgpt.log"
-              echo $response >> "$ruta_principal/tgpt.log"
-            fi
-            if [[ "$voz" == "true" ]]; then
-              espeak-ng -v es-419 "$output"
-            fi
+    if [[ $continuar == "true" ]]; then
+        #Escapar caracteres especiales en la entrada del usuario
+        input_text=$(echo "$input_text_final" | jq -R '.' | jq -s -c --arg modelo "$modelo" --argjson temperatura "$temperatura" --argjson max_token "$max_token" '{"model": $modelo , "prompt" : "\(.)", "temperature": $temperatura, "max_tokens" : $max_token}')
+        # response, enviamos los datos:
+        response=$(curl -s -X POST -H "$content_type" -H "$authorization" -d "$input_text" $url)
+        output=$(echo $response | jq -r '.choices[0].text')
+        total_line "-"
+        p_text "OpenAI: $output" "1" "blue"
+        echo "OpenAI: $output" >> $chat_file
+      
+        if [[ $output == *"null" ]]; then
+          echo $input_text
+          echo $response
+        else 
+          echo $input_text >> "$ruta_principal/tgpt.log"
+          echo $response >> "$ruta_principal/tgpt.log"
         fi
-    else
-        input_text=$(echo "$input_text" | jq -R '.' | jq -s -c --argjson n $n --arg size "$size" '{"prompt" : "\(.)", "n" : $n, "size" : $size }')
-        p_text "Se esta enviando la solicitud, puede demorar un rato" "1" "green"
-        response=$(curl -s $url_image -H "$content_type" -H "$authorization" -d "$input_text")
-        link_image=$(echo $response | jq -r '.data[].url')
-        for url_tmp in $link_image; do
-            number=$(shuf -i1-9999 -n1)
-            filename="$ruta_imagenes_d/$number.png"
-            p_text "[X] Se ha descargado la imagen en la direccion $filename" "1" "blue"
-            wget -q "$url_tmp" -O $filename
-            if [ "$TERM" == "xterm-kitty" ]; then
-              convert $filename -resize 300x300! "$ruta_imagenes_d/mini_$number.png"
-              kitty +kitten icat "$ruta_imagenes_d/mini_$number.png"
-            fi
-
-        done
-        
+        if [[ "$voz" == "true" ]]; then
+          espeak-ng -v es-419 "$output"
+        fi
     fi
   done
 }
@@ -358,12 +313,8 @@ function init {
         voz="false"
         max_token="600"
         url="https://api.openai.com/v1/completions"
-        url_image="https://api.openai.com/v1/images/generations"
         ruta_imagenes="$ruta_principal/imagenes/"
         ruta_textos="$ruta_principal/textos/"
-        n=2
-        ruta_imagenes_d="$ruta_principal/descargas"
-        size="1024x1024"
         # si el archivo de configuración no existe se crea.
         mkdir -p $ruta_principal
         echo "ruta_principal=$ruta_principal" >> $config_file
@@ -373,13 +324,9 @@ function init {
         echo "voz=$voz" >> $config_file
         echo "max_token=$max_token" >> $config_file
         echo "url=$url" >> $config_file
-        echo "url_image=$url_image" >> $config_file
         echo "YOUR_API_KEY=YOUR_API_KEY" >> $config_file
         echo "ruta_imagenes=$ruta_imagenes" >> $config_file
-        echo "ruta_imagenes_d=$ruta_imagenes_d" >> $config_file
         echo "ruta_textos=$ruta_textos" >> $confi_file
-        echo "n=$n" >>   $config_file
-        echo "size=$size" >> $config_file
         source "$config_file"
     fi
     if [[ ! -d $ruta_imagenes ]]; then
@@ -387,9 +334,6 @@ function init {
     fi
     if [[ ! -d $ruta_textos ]]; then
       mkdir $ruta_textos
-    fi
-    if [[ ! -d $ruta_imagenes_d ]]; then
-      mkdir $ruta_imagenes_d
     fi
 
   
@@ -437,9 +381,6 @@ function show_menu {
     p_text " 7) Setear valor Api Key (secret)" "1" "red"
     p_text " 8) Setear galeria imagenes ($ruta_imagenes)" "1" "green"
     p_text " 9) Setear galeria texto ($ruta_textos)" "1" "green"
-    p_text "10) Setear cantidad de imagenes ($n)" "1" "green"
-    p_text "11) Setear tamaño de las imagenes ($size)" "1" "green"
-    p_text "12) Ruta de descarga de imagenes ($ruta_imagenes_d)" "1" "green"
     p_text " 0) Salir" "1" "red"
 }
 
@@ -481,15 +422,6 @@ while true; do
         9) 
             modificar_variable "ruta_textos" "$ruta_textos"
             ;;
-        10)
-            modificar_variable "n" "$n"
-            ;;
-        11)
-            modificar_variable "size" "$size"
-            ;;
-        12)
-            modificar_variable "ruta_imagenes_d" "$ruta_imagenes_d"
-            ;;
         0)
             main
             break
@@ -518,7 +450,7 @@ function requirements {
   # Comprobar la distribución de Linux y el gestor de paquetes
 
   p_text "----------------------" "1" "green"
-  p_text "   talk_gpt 0.5v      " "1" "blue"
+  p_text "   talk_gpt 0.3v      " "1" "blue"
   p_text "   author: devMB      " "1" "red"
   p_text "----------------------" "1" "green"
   echo 
@@ -638,14 +570,6 @@ function print_ayuda {
       p_text "        Muestras los valores actuales con los que esta trabajando" "0" "green"
       p_text "m_voz" "1" "blue"
       p_text "        Permite modificar el valor de la variable voz, para que lea el contenido o no, es false o true" "0" "green"
-      p_text "imagen()" "1" "blue"
-      p_text "        Se envia un prompt entre comillas dobles, esto descargara las imagenes si es una terminal kitty se mostraran" "0" "green"
-      p_text "        en pantalla a tamaño reducido, si no se indicara la ruta, es importante que esten seteados los valores correctamente. " "0" "green"
-      p_text "        ver m_n y m_size" "0" "green"
-      p_text "m_n" "1" "blue"
-      p_text "        Este valor define la cantidad de imagenes que queremos generar." "0" "green"
-      p_text "m_size" "1" "blue"
-      p_text "        Esto definira los valores para el tamaño de las imagenes que solicitemos." "0" "green"
       p_text "ayuda" "1" "blue"
       p_text "        Es donde estas, bobo" "0" "red"
 
@@ -660,10 +584,7 @@ function ver_valores {
     p_text " 5) Máximo de tokens = ($max_token)" "1" "blue"
     p_text " 6) URL de la API = ($url)" "1" "blue"
     p_text " 7) Galeria imagenes = ($ruta_imagenes)" "1" "blue"
-    p_text " 8) Galeria texto = ($ruta_textos)" "1" "blue" 
-    p_text "10) Cantidad de imagenes ($n)" "1" "blue"
-    p_text "11) Tamaño de las imagenes ($size)" "1" "blue"
-    p_text "12) Ruta de descarga de imagenes ($ruta_imagenes_d)" "1" "blue"
+    p_text " 8) Galeria texto = ($ruta_textos)" "1" "blue"
 }
 
 init

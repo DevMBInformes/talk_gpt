@@ -1,14 +1,26 @@
 ![Logo](./images/grid_0.png)
+  
+# TALK GPT 0.5v
 
-# TALK GPT 0.4v
+- This is a simple Bash script that uses OpenAI's GPT-3 API to chat with an AI. The script allows you to create a new chat, or to continue a previous one. The responses are in text and can now also be generated with a robotic voice.
+- ***v0.3*** The configuration and chat files are now by default saved in $HOME/.config/talk_gpt, allowing for separation of the script and files and making it possible to include them in the same system.
 
-This is a simple Bash script that uses OpenAI's GPT-3 API to chat with an AI. The script allows you to create a new chat, or to continue a previous one. The responses are in text and can now also be generated with a robotic voice.
-The configuration and chat files are now by default saved in $HOME/.config/talk_gpt, allowing for separation of the script and files and making it possible to include them in the same system.
+- ***v0.5*** Now it is possible to request images from the model and generate them simply by writing a prompt.
 
+
+## Install
+
+```bash
+mkdir ~/talk_gpt/
+cd ~/talk_gpt/
+wget https://raw.githubusercontent.com/DevMBInformes/talk_gpt/main/talk_gpt.sh 
+chmod +x talk_gpt
+./talk_gpt
+```
 
 ## Requirements
 
-To use this script, you need to have **curl**, **jq**, **bc**, **espeak-ng** installed on your system. You also need to have an OpenAI API key to use the GPT-3 API.
+To use this script, you need to have **curl**, **jq**, **bc**, **espeak-ng**, **wget** and **imagemagick** installed on your system. You also need to have an OpenAI API key to use the GPT-3 API.
 Usage
 
 To use the script, simply run the ./talk_gpt.sh command. You will be presented with a menu:
@@ -76,10 +88,23 @@ se reconoceran, casi todos deben estar solos, img() si si esta acompañada se se
         Permite modificar el valor de la variable voz, para que lea el contenido o no, es false o true
 
 * **ayuda**
+
         Es donde vas a estar
 
-## Screenshots
+* **imagen()**
 
+        Se envia un prompt entre comillas dobles, esto descargara las imagenes si es una terminal kitty se mostraran
+        en pantalla a tamaño reducido, si no se indicara la ruta, es importante que esten seteados los valores correctamente. 
+        ver m_n y m_size
+* **m_n**
+
+        Este valor define la cantidad de imagenes que queremos generar.
+        
+**m_size**
+
+        Esto definira los valores para el tamaño de las imagenes que solicitemos.
+
+<details><summary> <b>Images ScreenShots (Click to expand!)</b></summary>
 
 ![imagen1](./images/imagen1.png)
 ![imagen2](./images/imagen2.png)
@@ -90,3 +115,5 @@ se reconoceran, casi todos deben estar solos, img() si si esta acompañada se se
 ![imagen7](./images/imagen7.png)
 ![imagen8](./images/imagen8.png)
 ![imagen9](./images/imagen9.png)
+![imagen10](./images/imagen10.png)
+

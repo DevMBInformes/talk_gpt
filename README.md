@@ -14,8 +14,8 @@
 mkdir ~/talk_gpt/
 cd ~/talk_gpt/
 wget https://raw.githubusercontent.com/DevMBInformes/talk_gpt/main/talk_gpt.sh 
-chmod +x talk_gpt
-./talk_gpt
+chmod +x talk_gpt.sh
+./talk_gpt.sh
 ```
 
 ## Requirements

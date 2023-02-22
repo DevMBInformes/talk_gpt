@@ -10,11 +10,19 @@
 
 ## Install
 
+with the -config option, the first time is convenient for you to check the system
+
 ```bash
 mkdir ~/talk_gpt/
 cd ~/talk_gpt/
 wget https://raw.githubusercontent.com/DevMBInformes/talk_gpt/main/talk_gpt.sh 
 chmod +x talk_gpt.sh
+./talk_gpt.sh -config
+```
+
+or
+
+```bash
 ./talk_gpt.sh
 ```
 

@@ -666,4 +666,8 @@ function ver_valores {
     p_text "12) Ruta de descarga de imagenes ($ruta_imagenes_d)" "1" "blue"
 }
 
-init
+if [[ $1 == "-config" ]]; then
+  requirements
+else
+  init
+fi

@@ -364,6 +364,11 @@ function init {
         n=2
         ruta_imagenes_d="$ruta_principal/descargas"
         size="1024x1024"
+        YOUR_API_KEY1="YOUR_API_KEY1"
+        YOUR_API_KEY2="YOUR_API_KEY2"
+        YOUR_API_KEY3="YOUR_API_KEY3"
+        YOUR_API_KEY4="YOUR_API_KEY4"
+        YOUR_API_KEY5="YOUR_API_KEY5"
         # si el archivo de configuración no existe se crea.
         mkdir -p $ruta_principal
         echo "ruta_principal=$ruta_principal" >> $config_file
@@ -374,12 +379,17 @@ function init {
         echo "max_token=$max_token" >> $config_file
         echo "url=$url" >> $config_file
         echo "url_image=$url_image" >> $config_file
-        echo "YOUR_API_KEY=YOUR_API_KEY" >> $config_file
+        echo "YOUR_API_KEY=$YOUR_API_KEY" >> $config_file
         echo "ruta_imagenes=$ruta_imagenes" >> $config_file
         echo "ruta_imagenes_d=$ruta_imagenes_d" >> $config_file
         echo "ruta_textos=$ruta_textos" >> $confi_file
         echo "n=$n" >>   $config_file
         echo "size=$size" >> $config_file
+        echo "YOUR_API_KEY1=$YOUR_API_KEY1" >> $config_file 
+        echo "YOUR_API_KEY2=$YOUR_API_KEY2" >> $config_file 
+        echo "YOUR_API_KEY3=$YOUR_API_KEY3" >> $config_file 
+        echo "YOUR_API_KEY4=$YOUR_API_KEY4" >> $config_file 
+        echo "YOUR_API_KEY5=$YOUR_API_KEY5" >> $config_file 
         source "$config_file"
     fi
     if [[ ! -d $ruta_imagenes ]]; then
@@ -391,8 +401,6 @@ function init {
     if [[ ! -d $ruta_imagenes_d ]]; then
       mkdir $ruta_imagenes_d
     fi
-
-  
   main
 }
 # Definir la función para modificar una variable
@@ -440,6 +448,7 @@ function show_menu {
     p_text "10) Setear cantidad de imagenes ($n)" "1" "green"
     p_text "11) Setear tamaño de las imagenes ($size)" "1" "green"
     p_text "12) Ruta de descarga de imagenes ($ruta_imagenes_d)" "1" "green"
+    p_text "13) Almacenar API KEYS" "1" "green"
     p_text " 0) Salir" "1" "red"
 }
 
@@ -490,6 +499,9 @@ while true; do
         12)
             modificar_variable "ruta_imagenes_d" "$ruta_imagenes_d"
             ;;
+        13)
+            store_api_key
+            ;;
         0)
             main
             break
@@ -499,6 +511,34 @@ while true; do
             ;;
     esac
 done
+}
+
+function store_api_key {
+    clear
+    while true; do
+    p_text "LISTADO ACTUAL DE APIS KEY" "1" "blue"
+    p_text "1) API KEY 1 ($YOUR_API_KEY1)" "1" "green"
+    p_text "2) API KEY 2 ($YOUR_API_KEY2)" "1" "green"
+    p_text "3) API KEY 3 ($YOUR_API_KEY3)" "1" "green"
+    p_text "4) API KEY 4 ($YOUR_API_KEY4)" "1" "green"
+    p_text "5) API KEY 5 ($YOUR_API_KEY5)" "1" "green"
+    p_text "0) Salir" "1" "red"
+    read -p "Ingrese el número de API KEY A Setear: " option_api_key
+    if [[ option_api_key == "0" ]]; then
+      break
+    else
+    read -p "Ingrese la nueva API KEY: " new_api_key
+    read -p "Ingrese la cuenta a la que pertenece: " account_key
+    variable="YOUR_API_KEY${option_api_key}"
+    echo "El valor de la variable ${variable} es: ${!variable}"
+    valor="$new_api_key:$account_key"
+    echo $valor
+    sed -i "s/^${variable}=.*/${variable}=\"$valor\"/" "$config_file"
+    p_text "¡$variable actualizado a '$valor'!" "1" "green"
+    source $config_file
+    fi
+  done
+    
 }
 
 function clear_chats {
@@ -590,6 +630,22 @@ function requirements {
       sleep 1
   fi
 
+  # Comprobar si imagemagick está instalado
+  if ! $READ imagemagick &> /dev/null; then
+      echo "[-] IMAGEMAGICK no está instalado. Instalando..."
+      $INSTALL imagemagick
+    else
+      p_text "[X] IMAGEMAGICK INSTALADO" "1" "green"
+      sleep 1
+  fi
+  # Comprobar si wget está instalado
+  if ! $READ wget &> /dev/null; then
+      echo "[-] WGET no está instalado. Instalando..."
+      $INSTALL wget
+    else
+      p_text "[X] WGET INSTALADO" "1" "green"
+      sleep 1
+  fi 
   # Comprobar si espeak-bg está instalado
   if ! $READ espeak-ng &> /dev/null; then
       echo "[-] ESPEAK-NG no está instalado. Instalando..."
